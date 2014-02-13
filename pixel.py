@@ -18,6 +18,12 @@ def get_cookie_domain(host):
     Assumptions:
     - Domain tld is not two-level (.com, not .co.uk)
     - Code is not being accessed via hostname (testing on localhost)
+
+    Inputs:
+    :host: Address that this project was accessed through
+
+    Outputs:
+    :host: Trimmed version of input :host: suitable as a domain-wide cookie
     """
     # Strip out port number, if any (likely on localhost)
     host = host.split(':')[0]
@@ -30,6 +36,9 @@ def get_cookie_domain(host):
 
 @app.route("/pixel.gif")
 def return_gif():
+    """
+    Returns a tracking pixel with an attached anonymous cookie
+    """
     response = make_response(PIXEL)
     response.headers['Content-Type'] = 'image/gif'
     aguid = request.cookies.get('aguid') or '{%s}' % (uuid.uuid4(),)
@@ -48,6 +57,10 @@ def return_gif():
 @app.route("/", defaults={'path': ''})
 @app.route("/<path:path>")
 def redirect_all(path):
+    """
+    Redirects all requests not for pixel.gif to www.my.jobs, keeping the
+    requested path
+    """
     return redirect("http://www.my.jobs/%s" % path, code=301)
 
 

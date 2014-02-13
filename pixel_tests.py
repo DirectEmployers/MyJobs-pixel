@@ -53,7 +53,7 @@ class PixelTestCase(unittest.TestCase):
             response = self.client.head(path)
             self.assertEqual(response.status_code, 301)
             self.assertEqual(response.headers['Location'],
-                             'http://www.my.jobs')
+                             'http://www.my.jobs%s' % path)
 
 if __name__ == '__main__':
     unittest.main()

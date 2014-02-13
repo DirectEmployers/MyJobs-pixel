@@ -48,7 +48,7 @@ def return_gif():
 @app.route("/", defaults={'path': ''})
 @app.route("/<path:path>")
 def redirect_all(path):
-    return redirect("http://www.my.jobs", code=301)
+    return redirect("http://www.my.jobs/%s" % path, code=301)
 
 
 if __name__ == "__main__":

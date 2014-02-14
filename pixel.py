@@ -32,8 +32,8 @@ def get_cookie_domain(host):
 
 def check_or_set_cookie(response):
     """
-    Determines if there is an aguid cookie associated with the current
-    request
+    Determines if there is an aguid cookie and P3P policy associated
+    with the current request
 
     Updates cookie expiration if it already exists and is valid
     Updates cookie value if it is not valid
@@ -50,6 +50,7 @@ def check_or_set_cookie(response):
     response.set_cookie('aguid', str(aguid.hex),
                         expires=expires,
                         domain=domain)
+    response.headers['P3P'] = 'CP="ALL DSP COR CURa IND PHY UNR"'
 
 
 @app.route("/pixel.gif")

@@ -9,7 +9,7 @@ app.permanent_session_lifetime = timedelta(days=365)
 
 def get_cookie_domain(host):
     """
-    Sets a domain-wide cookie for the current domain
+    Determines the domain for a domain-wide cookie
 
     Assumptions:
     - Domain tld is not two-level (.com, not .co.uk)
@@ -30,18 +30,26 @@ def get_cookie_domain(host):
     return '.' + '.'.join(host)
 
 
-def check_or_set_cookie(request, response):
+def check_or_set_cookie(response):
     """
-    Validate existing cookie or set new cookie
+    Determines if there is an aguid cookie associated with the current
+    request
+
+    Updates cookie expiration if it already exists and is valid
+    Updates cookie value if it is not valid
+    Sets a domain-wide cookie if there isn't one
     """
     try:
-        uuid.UUID(request.cookies.get('aguid'))
+        aguid = uuid.UUID(request.cookies.get('aguid'))
     except:
-        domain = get_cookie_domain(request.host)
-        expires = datetime.utcnow() + app.permanent_session_lifetime
-        response.set_cookie('aguid', str(uuid.uuid4()),
-                            expires=expires,
-                            domain=domain)
+        aguid = uuid.uuid4()
+
+    # Update cookie expiration
+    domain = get_cookie_domain(request.host)
+    expires = datetime.utcnow() + app.permanent_session_lifetime
+    response.set_cookie('aguid', str(aguid.hex),
+                        expires=expires,
+                        domain=domain)
 
 
 @app.route("/pixel.gif")
@@ -51,7 +59,7 @@ def pixel_gif():
     """
     response = make_response(PIXEL)
     response.headers['Content-Type'] = 'image/gif'
-    check_or_set_cookie(request, response)
+    check_or_set_cookie(response)
     return response
 
 
@@ -62,7 +70,7 @@ def favicon_ico():
     """
     response = make_response(FAVICON)
     response.headers['Content-Type'] = 'image/x-icon'
-    check_or_set_cookie(request, response)
+    check_or_set_cookie(response)
     return response
 
 

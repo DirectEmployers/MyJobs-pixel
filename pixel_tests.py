@@ -9,7 +9,7 @@ import pixel
 
 class PixelTestCase(unittest.TestCase):
     def setUp(self):
-        pixel.app.config['TESTING'] = True
+        pixel.app.testing = True
         self.client = pixel.app.test_client()
 
     def test_aguid_cookie(self):
@@ -20,10 +20,10 @@ class PixelTestCase(unittest.TestCase):
         aguid, domain, expires, path = response.headers['Set-Cookie'].\
             split('; ')
 
-        # aguid portion should be in the form "aguid="{uuid}";
-        # Strip everything not between braces and parse the result as a uuid
+        # aguid portion should be in the form "aguid=uuid";
+        # Split on '=' and parse the second part as a uuid
         # to check if it is valid
-        uuid.UUID(aguid.split('"')[1])
+        uuid.UUID(aguid.split('=')[1])
 
         self.assertTrue(domain.endswith('=.localhost'))
 
@@ -54,6 +54,23 @@ class PixelTestCase(unittest.TestCase):
             self.assertEqual(response.status_code, 301)
             self.assertEqual(response.headers['Location'],
                              'http://www.my.jobs%s' % path)
+
+    def test_bad_aguid_cookie(self):
+        """
+        Tests that an invalid aguid cookie (cookie's value cannot be
+        parsed by uuid.UUID) gets replaced with a valid cookie
+        """
+        self.client.set_cookie('localhost', 'aguid', 'notavalidaguid')
+
+        cookie = [cookie for cookie in self.client.cookie_jar
+                   if cookie.name=='aguid'][0]
+        with self.assertRaises(ValueError):
+            uuid.UUID(cookie.value)
+
+        response = self.client.get('/pixel.gif')
+        cookie = parse_cookie(response.headers['Set-Cookie'])
+        uuid.UUID(cookie['aguid'])
+
 
 if __name__ == '__main__':
     unittest.main()

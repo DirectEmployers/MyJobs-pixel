@@ -20,8 +20,8 @@ class PixelTestCase(unittest.TestCase):
         aguid, domain, expires, path = response.headers['Set-Cookie'].\
             split('; ')
 
-        # aguid portion should be in the form "aguid="{uuid}";
-        # Strip everything not between braces and parse the result as a uuid
+        # aguid portion should be in the form "aguid=uuid";
+        # Split on '=' and parse the second part as a uuid
         # to check if it is valid
         uuid.UUID(aguid.split('=')[1])
 

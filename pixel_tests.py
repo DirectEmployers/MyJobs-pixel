@@ -12,7 +12,11 @@ class PixelTestCase(unittest.TestCase):
         pixel.app.testing = True
         self.client = pixel.app.test_client()
 
-    def test_aguid_cookie(self):
+    def test_setting_headers(self):
+        """
+        Making a request for pixel.gif should set both Set-Cookie and P3P
+        headers
+        """
         response = self.client.get('/pixel.gif')
 
         # parse_cookie discards the expires portion, which we need to check;
@@ -33,6 +37,8 @@ class PixelTestCase(unittest.TestCase):
         expiration = parse_date(expires.split('=')[1])
         expected_expiration = datetime.utcnow() + timedelta(days=365)
         self.assertEqual(expiration.date(), expected_expiration.date())
+
+        response.headers['P3P']
 
     def test_aguid_cookie_domain(self):
         for host in [('http://localhost', '.localhost'),

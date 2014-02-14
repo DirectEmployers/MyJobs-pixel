@@ -1,15 +1,11 @@
 from datetime import datetime, timedelta
+from images.images import FAVICON, PIXEL
 import uuid
 
 from flask import Flask, make_response, request, redirect
 
 app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(days=365)
-
-PIXEL = "\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff" + \
-        "\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00\x00\x2c\x00\x00\x00\x00" + \
-        "\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3b"
-
 
 def get_cookie_domain(host):
     """
@@ -34,23 +30,39 @@ def get_cookie_domain(host):
     return '.' + '.'.join(host)
 
 
+def check_or_set_cookie(request, response):
+    """
+    Validate existing cookie or set new cookie
+    """
+    try:
+        uuid.UUID(request.cookies.get('aguid'))
+    except:
+        domain = get_cookie_domain(request.host)
+        expires = datetime.utcnow() + app.permanent_session_lifetime
+        response.set_cookie('aguid', str(uuid.uuid4()),
+                            expires=expires,
+                            domain=domain)
+
+
 @app.route("/pixel.gif")
-def return_gif():
+def pixel_gif():
     """
     Returns a tracking pixel with an attached anonymous cookie
     """
     response = make_response(PIXEL)
     response.headers['Content-Type'] = 'image/gif'
-    aguid = request.cookies.get('aguid') or '{%s}' % (uuid.uuid4(),)
+    check_or_set_cookie(request, response)
+    return response
 
-    host = request.host
-    host = get_cookie_domain(host)
 
-    expires = datetime.utcnow() + app.permanent_session_lifetime
-    response.set_cookie('aguid', aguid,
-                        expires=expires,
-                        domain=host)
-
+@app.route("/favicon.ico")
+def favicon_ico():
+    """
+    Returns a tracking favicon.ico with an attached anonymous cookie
+    """
+    response = make_response(FAVICON)
+    response.headers['Content-Type'] = 'image/x-icon'
+    check_or_set_cookie(request, response)
     return response
 
 
@@ -58,11 +70,11 @@ def return_gif():
 @app.route("/<path:path>")
 def redirect_all(path):
     """
-    Redirects all requests not for pixel.gif to www.my.jobs, keeping the
-    requested path
+    Redirects all other requests to www.my.jobs,
+    keeping the requested path
     """
     return redirect("http://www.my.jobs/%s" % path, code=301)
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

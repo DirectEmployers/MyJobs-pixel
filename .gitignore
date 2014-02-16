@@ -35,5 +35,8 @@ nosetests.xml
 .project
 .pydevproject
 
+# PyCharm
+.idea
+
 # shhh
 newrelic.ini

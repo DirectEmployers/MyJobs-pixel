@@ -10,25 +10,20 @@ app.permanent_session_lifetime = timedelta(days=365)
 
 def get_cookie_domain():
     """
-    Determines the domain for a domain-wide cookie
+    Determines the root domain for a domain-wide cookie
 
     Assumptions:
     - Domain tld is not two-level (.com, not .co.uk)
     - Code is not being accessed via hostname (testing on localhost)
 
-    Inputs:
-    :host: Address that this project was accessed through
-
     Outputs:
-    :host: Trimmed version of input :host: suitable as a domain-wide cookie
+    :domain: domain for domain-wide cookie
     """
-    # Strip out port number, if any (likely on localhost)
-    host = request.host.split(':')[0]
+    # Strip out port number and get root domain and TLD
+    domain = request.host.split(':')[0].split('.')[-2:]
 
-    # According to assumptions, these must be domain and tld
-    host = host.split('.')[-2:]
-
-    return '.' + '.'.join(host)
+    # Add dot prefix for domain-wide cookie format
+    return '.' + '.'.join(domain)
 
 
 def update_or_set_cookie(response):

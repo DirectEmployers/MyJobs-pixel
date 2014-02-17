@@ -1,7 +1,7 @@
 import sys, os
 
 import newrelic.agent
-newrelic.agent.iniitalize('/home/web/MyJobs-pixel/newrelic.ini')
+newrelic.agent.initialize('/home/web/MyJobs-pixel/newrelic.ini')
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

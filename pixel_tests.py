@@ -45,8 +45,8 @@ class PixelTestCase(unittest.TestCase):
 
     def test_setting_headers(self):
         """
-        Making a request for pixel.gif should set both Set-Cookie and P3P
-        headers
+        Making a request for pixel.gif should set the Set-Cookie, P3P,
+        X-Uri-Query, and X-User-Agent headers
         """
         response = self.client.get('/pixel.gif')
 
@@ -70,6 +70,12 @@ class PixelTestCase(unittest.TestCase):
         self.assertEqual(expiration.date(), expected_expiration.date())
 
         self.assertEqual(response.headers['P3P'], 'CP="ALL DSP COR CURa IND PHY UNR"')
+
+        # Ensure header exists
+        response.headers['X-User-Agent']
+
+        self.assertTrue(aguid in response.headers['X-Uri-Query'])
+        self.assertTrue(response.headers['X-Uri-Query'].endswith('myguid='))
 
     def test_aguid_cookie_domain(self):
         for host in [('http://localhost', '.localhost'),

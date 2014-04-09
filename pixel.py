@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(days=365)
 
 
-def add_headers(response, aguid='', myguid=''):
+def add_headers(response, aguid, myguid=''):
     """
     Adds custom user agent and query string headers, appends aguid and
     myguid cookie values to query string header
@@ -17,7 +17,9 @@ def add_headers(response, aguid='', myguid=''):
     response.headers['X-User-Agent'] = ua.replace(' ', '+')
 
     qs = request.query_string
-    cookie_qs = 'aguid=%s&myguid=%s' % (aguid, myguid)
+    cookie_qs = 'aguid=%s' % aguid
+    if len(myguid) > 0:
+        cookie_qs += '&myguid=%s' % myguid
     if qs:
         qs += '&%s' % cookie_qs
     else:

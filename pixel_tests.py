@@ -3,6 +3,7 @@ import unittest
 import uuid
 
 from werkzeug.http import parse_cookie, parse_date
+from wsgiref.headers import Headers
 
 import pixel
 
@@ -75,7 +76,23 @@ class PixelTestCase(unittest.TestCase):
         response.headers['X-User-Agent']
 
         self.assertTrue(aguid in response.headers['X-Uri-Query'])
-        self.assertTrue(response.headers['X-Uri-Query'].endswith('myguid='))
+
+        # If myguid is not provided or is invalid, we should not include
+        # it in the header
+        for myguid in ['',
+                       'invalid_myguid']:
+            self.client.set_cookie('localhost', 'myguid',
+                                   myguid)
+
+            response = self.client.get('/pixel.gif')
+            self.assertFalse('myguid=' in response.headers['X-Uri-Query'])
+
+        myguid = '1234567890abcdef' * 2
+        self.client.set_cookie('localhost', 'myguid',
+                               myguid)
+        response = self.client.get('/pixel.gif')
+        self.assertTrue(response.headers['X-Uri-Query'].endswith(
+            'myguid=%s' % myguid))
 
     def test_aguid_cookie_domain(self):
         for host in [('http://localhost', '.localhost'),

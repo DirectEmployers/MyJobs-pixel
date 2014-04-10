@@ -3,7 +3,6 @@ import unittest
 import uuid
 
 from werkzeug.http import parse_cookie, parse_date
-from wsgiref.headers import Headers
 
 import pixel
 
@@ -49,7 +48,8 @@ class PixelTestCase(unittest.TestCase):
         Making a request for pixel.gif should set the Set-Cookie, P3P,
         X-Uri-Query, and X-User-Agent headers
         """
-        response = self.client.get('/pixel.gif')
+        response = self.client.get('/pixel.gif',
+                   environ_base={'HTTP_USER_AGENT': 'User Agent'})
 
         # parse_cookie discards the expires portion, which we need to check;
         # split the cookie manually
@@ -73,7 +73,7 @@ class PixelTestCase(unittest.TestCase):
         self.assertEqual(response.headers['P3P'], 'CP="ALL DSP COR CURa IND PHY UNR"')
 
         # Ensure header exists
-        response.headers['X-User-Agent']
+        self.assertEqual(response.headers['X-User-Agent'], 'User+Agent')
 
         self.assertTrue(aguid in response.headers['X-Uri-Query'])
 
@@ -91,8 +91,8 @@ class PixelTestCase(unittest.TestCase):
         self.client.set_cookie('localhost', 'myguid',
                                myguid)
         response = self.client.get('/pixel.gif')
-        self.assertTrue(response.headers['X-Uri-Query'].endswith(
-            'myguid=%s' % myguid))
+        self.assertTrue('='.join(['myguid',myguid]) in
+                        response.headers['X-Uri-Query'])
 
     def test_aguid_cookie_domain(self):
         for host in [('http://localhost', '.localhost'),

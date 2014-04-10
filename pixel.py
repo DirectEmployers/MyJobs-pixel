@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.permanent_session_lifetime = timedelta(days=365)
 
 
-def add_headers(response, aguid, myguid=''):
+def add_headers(response):
     """
     Adds custom user agent and query string headers, appends aguid and
     myguid cookie values to query string header
@@ -16,16 +16,17 @@ def add_headers(response, aguid, myguid=''):
     ua = request.headers.get('User-Agent', '-')
     response.headers['X-User-Agent'] = ua.replace(' ', '+')
 
-    qs = request.query_string
-    cookie_qs = 'aguid=%s' % aguid
-    if len(myguid) > 0:
-        cookie_qs += '&myguid=%s' % myguid
-    if qs:
-        qs += '&%s' % cookie_qs
-    else:
-        qs = cookie_qs
+    cookie_qs = "&".join(['='.join([k, v])
+                for k, v in get_cookie_dict(response).items() if v])
+    qs = "&".join([x for x in [request.query_string, cookie_qs] if x])
     response.headers['X-Uri-Query'] = qs
 
+def get_cookie_dict(response):
+    """
+    Get cookie dictionary from Set-Cookie response header
+    """
+    return {k: v for k, v in [c.split("; ")[0].split("=")
+                 for c in response.headers.getlist('Set-Cookie')]}
 
 def get_cookie_domain():
     """
@@ -53,9 +54,6 @@ def update_or_set_cookie(response):
     Updates cookie expiration if it already exists and is valid
     Sets a domain-wide aguid cookie if there is not one
     Adds P3P Policy
-
-    Outputs:
-    :return_cookies: Dict containing aguid and myguid (if it exists) cookies
     """
     # Add P3P Policy
     response.headers['P3P'] = 'CP="ALL DSP COR CURa IND PHY UNR"'
@@ -74,8 +72,6 @@ def update_or_set_cookie(response):
         response.set_cookie('aguid', aguid.hex,
                             expires=expires, domain=domain)
 
-    return_cookies = {'aguid': aguid.hex}
-
     try:
         # Validate myguid cookie
         myguid = uuid.UUID(request.cookies.get('myguid'))
@@ -89,9 +85,6 @@ def update_or_set_cookie(response):
         # Update myguid cookie expiration
         response.set_cookie('myguid', myguid.hex,
                             expires=expires, domain=domain)
-        return_cookies['myguid'] = myguid.hex
-
-    return return_cookies
 
 
 @app.route("/pixel.gif")
@@ -101,8 +94,8 @@ def pixel_gif():
     """
     response = make_response(PIXEL)
     response.headers['Content-Type'] = 'image/gif'
-    cookies = update_or_set_cookie(response)
-    add_headers(response, **cookies)
+    update_or_set_cookie(response)
+    add_headers(response)
     return response
 
 
@@ -113,8 +106,8 @@ def favicon_ico():
     """
     response = make_response(FAVICON)
     response.headers['Content-Type'] = 'image/x-icon'
-    cookies = update_or_set_cookie(response)
-    add_headers(response, **cookies)
+    update_or_set_cookie(response)
+    add_headers(response)
     return response
 
 
